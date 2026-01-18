@@ -2,6 +2,14 @@
 
 A simple Python CLI tool for syncing agent skills across different platforms. No overengineering, just straightforward file copying.
 
+## Philosophy
+
+**Global Skills Only**: This tool only manages global skills stored in platform-specific directories (e.g., `~/.claude/skills`, `~/.cursor/skills`). These are your personal, cross-project skills that you want available everywhere.
+
+**Repo-Specific Skills**: Skills that are synced to git repositories (project-specific skills) should be manually handpicked and managed by you, not automated by any tool. These belong in your project's version control and should be intentionally selected and maintained.
+
+**Transparency Through Explicit Commands**: Each command does one thing. There are no "do everything" commands that combine multiple operations. You run commands one by one (`scan`, `clean`, `sync`, `backup`, `restore`) so you know exactly what each step does. This way, you understand what happened by typing each command explicitly, rather than having one command that does multiple things behind the scenes.
+
 ## Features
 
 - **Configure** master and fork platforms
@@ -129,9 +137,13 @@ Delete all skills from all fork platforms:
 skills clean fork
 ```
 
-**Note**: For Claude Code, this also cleans skills from plugin directories (`~/.claude/plugins/.../skills`).
+**Important**: 
+- This only affects **global skills** in platform directories (e.g., `~/.claude/skills`, `~/.cursor/skills`)
+- **Repo-specific skills** (in git repositories) are never touched by this tool
+- For Claude Code, this also cleans skills from plugin directories (`~/.claude/plugins/.../skills`)
+- The command will show you exactly what will be deleted before proceeding
 
-Use `--dry-run` to preview what would be deleted:
+Use `--dry-run` to preview what would be deleted without actually deleting:
 
 ```bash
 skills clean master --dry-run
@@ -145,11 +157,14 @@ Copy all skills from master to all configured fork platforms:
 skills sync
 ```
 
-This will:
-1. Clean all existing skills in fork platforms
-2. Copy all skills from master to each fork platform (hard copy, no symlinks)
+This will copy all skills from master to each fork platform (hard copy, no symlinks). Existing skills in fork platforms will be overwritten.
 
-Use `--dry-run` to preview:
+**Explicit workflow** (recommended for transparency):
+1. First, see what you have: `skills scan`
+2. Clean forks explicitly: `skills clean fork`
+3. Then sync: `skills sync`
+
+Or use `--dry-run` to preview what sync would do:
 
 ```bash
 skills sync --dry-run
@@ -211,8 +226,9 @@ skills platforms
 
 ## Notes
 
+- **Global skills only**: This tool only manages skills in platform directories (e.g., `~/.claude/skills`). Repo-specific skills synced to git should be manually managed
+- **Explicit commands**: Each command does one thing. Run them one by one (`scan`, `clean`, `sync`, `backup`, `restore`) to understand exactly what each step does
 - All file operations use **hard copies** (no symlinks)
-- Fork platforms are cleaned before syncing
 - Backups are timestamped and stored in `~/.config/skills-sync/backups/`
 - Each backup includes `skills_info.json` with path information for accurate restoration
 - Clean operations handle Claude Code plugin directories recursively
