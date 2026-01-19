@@ -15,9 +15,9 @@ class Platform(Enum):
 
 
 def _discover_claude_plugin_paths() -> List[Path]:
-    """Discover skill paths under .claude/plugins/marketplace only."""
+    """Discover skill paths under .claude/plugins/marketplaces only."""
     home = Path.home()
-    marketplace_dir = home / ".claude" / "plugins" / "marketplace"
+    marketplace_dir = home / ".claude" / "plugins" / "marketplaces"
     skill_paths = []
     
     if marketplace_dir.exists() and marketplace_dir.is_dir():
