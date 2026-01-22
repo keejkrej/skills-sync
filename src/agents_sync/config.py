@@ -6,7 +6,7 @@ from typing import List, Optional
 from dataclasses import dataclass, asdict
 
 
-CONFIG_DIR = Path.home() / ".config" / "skills-sync"
+CONFIG_DIR = Path.home() / ".config" / "agents-sync"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 SKILLS_INFO_FILE = CONFIG_DIR / "skills_info.json"
 BACKUP_DIR = CONFIG_DIR / "backups"
