@@ -40,15 +40,16 @@ def read_claude_mcp_servers() -> Tuple[Dict[str, Any], List[str]]:
             pass
 
     # Read plugin configs
+    # Plugin .mcp.json files have server name as top-level key, not under mcpServers
     plugins_path = mcp_paths.get("plugins")
     if plugins_path and plugins_path.exists():
         for mcp_json in plugins_path.rglob(".mcp.json"):
             try:
                 with open(mcp_json, 'r') as f:
                     data = json.load(f)
-                    plugin_servers = data.get("mcpServers", {})
                     plugin_name = mcp_json.parent.name
-                    for name, config in plugin_servers.items():
+                    # Each key in the file is a server name
+                    for name, config in data.items():
                         # Global wins if duplicate
                         if name not in servers:
                             servers[name] = config
