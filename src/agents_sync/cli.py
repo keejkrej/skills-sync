@@ -287,6 +287,11 @@ def sync(
         else:
             console.print(f"  {fork_name}: [green]{count} skill(s) synced[/green]")
 
+    # Display MCP sync results
+    mcp_count = results.get('mcp_synced', 0)
+    if mcp_count > 0:
+        console.print(f"\n[bold cyan]MCP Servers Synced:[/bold cyan] {mcp_count}")
+
 
 @app.command()
 def backup(
