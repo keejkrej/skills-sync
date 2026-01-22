@@ -1,6 +1,6 @@
-# Skills Sync
+# Agents Sync
 
-A simple Python CLI tool for syncing agent skills across different platforms. No overengineering, just straightforward file copying.
+A simple Python CLI tool for syncing agent skills and MCP servers across different platforms. No overengineering, just straightforward file copying and config merging.
 
 ## Philosophy
 
@@ -8,24 +8,35 @@ A simple Python CLI tool for syncing agent skills across different platforms. No
 
 **Repo-Specific Skills**: Skills that are synced to git repositories (project-specific skills) should be manually handpicked and managed by you, not automated by any tool. These belong in your project's version control and should be intentionally selected and maintained.
 
+**MCP Server Sync**: MCP servers are read from Claude Code (global `~/.claude.json` and plugin `.mcp.json` files) and synced to other platforms with automatic format translation.
+
 **Transparency Through Explicit Commands**: Each command does one thing. There are no "do everything" commands that combine multiple operations. You run commands one by one (`scan`, `clean`, `sync`, `backup`, `restore`) so you know exactly what each step does. This way, you understand what happened by typing each command explicitly, rather than having one command that does multiple things behind the scenes.
 
 ## Features
 
+### Skills
 - **Configure** master and fork platforms
 - **Scan** skills in master platform
 - **Clean** skills from master or fork platforms (including Claude Code plugins)
 - **Sync** skills from master to all fork platforms (hard copy, no symlinks)
-- **Backup** master skills to `~/.config/skills-sync/backups/` (includes path information)
+- **Backup** master skills to `~/.config/agents-sync/backups/` (includes path information)
 - **Restore** skills from backups with interactive selection
+
+### MCP Servers
+- **Scan** MCP servers from Claude Code (global + plugin configs)
+- **Clean** MCP servers from master or fork platforms
+- **Sync** MCP servers to fork platforms with automatic format translation
+- Supports different config formats (JSON, TOML) across platforms
 
 ## Supported Platforms
 
-- **Claude Code**: `~/.claude/skills` and `~/.claude/plugins/marketplaces/.../skills`
-- **OpenCode**: `~/.opencode/skill`
-- **Codex**: `~/.codex/skills`
-- **Cursor**: `~/.cursor/skills`
-- **Windsurf**: `~/.windsurf/skills`
+| Platform | Skills Path | MCP Config |
+|----------|-------------|------------|
+| Claude Code | `~/.claude/skills` + plugins | `~/.claude.json` + plugin `.mcp.json` |
+| OpenCode | `~/.opencode/skill` | `~/.config/opencode/opencode.json` |
+| Codex | `~/.codex/skills` | `~/.codex/config.toml` |
+| Cursor | `~/.cursor/skills` | `~/.cursor/mcp.json` |
+| Windsurf | `~/.windsurf/skills` | `~/.codeium/windsurf/mcp_config.json` |
 
 ## Installation
 
@@ -34,16 +45,16 @@ A simple Python CLI tool for syncing agent skills across different platforms. No
 Using `uv tool install` to install globally from the git repository:
 
 ```bash
-uv tool install git+https://github.com/keejkrej/skills-sync.git
+uv tool install git+https://github.com/keejkrej/agents-sync.git
 ```
 
-After installation, use the `skills` command directly:
+After installation, use the `agents` command directly:
 
 ```bash
-skills config
+agents config
 ```
 
-**Note**: This installs the tool globally and makes the `skills` and `skills-sync` commands available system-wide.
+**Note**: This installs the tool globally and makes the `agents`, `agents-sync`, `skills`, and `skills-sync` commands available system-wide. The `skills` commands are provided for backwards compatibility.
 
 ### Local Installation (Development)
 
@@ -53,32 +64,32 @@ Using `uv` (editable mode - picks up code changes automatically):
 uv pip install -e .
 ```
 
-After installation, use the `skills` command directly:
+After installation, use the `agents` command directly:
 
 ```bash
-skills config
+agents config
 ```
 
-**Note**: Editable mode means you don't need to reinstall when you make code changes - just use `skills` directly!
+**Note**: Editable mode means you don't need to reinstall when you make code changes - just use `agents` directly!
 
 ### Using uvx (Run without installing)
 
 Run directly from git without installing:
 
 ```bash
-uvx --from git+https://github.com/keejkrej/skills-sync.git skills config
+uvx --from git+https://github.com/keejkrej/agents-sync.git agents config
 ```
 
 Or use the full command name:
 
 ```bash
-uvx --from git+https://github.com/keejkrej/skills-sync.git skills-sync config
+uvx --from git+https://github.com/keejkrej/agents-sync.git agents-sync config
 ```
 
 Use `--refresh` to pick up code changes:
 
 ```bash
-uvx --refresh --from git+https://github.com/keejkrej/skills-sync.git skills config
+uvx --refresh --from git+https://github.com/keejkrej/agents-sync.git agents config
 ```
 
 **Note**: `uvx` caches packages, so use `--refresh` flag when you make code changes, or clear cache with `uv cache clean` (but this deletes all cached packages).
@@ -86,7 +97,7 @@ uvx --refresh --from git+https://github.com/keejkrej/skills-sync.git skills conf
 ### Using pip
 
 ```bash
-pip install git+https://github.com/keejkrej/skills-sync.git
+pip install git+https://github.com/keejkrej/agents-sync.git
 ```
 
 Or for editable installation:
@@ -100,78 +111,84 @@ pip install -e .
 ### Configure master and fork platforms
 
 ```bash
-skills config
+agents config
 ```
 
 This will prompt you to select:
 - Master platform (source of truth)
 - Fork platforms (destinations for syncing)
 
-Configuration is saved to `~/.config/skills-sync/config.json`.
+Configuration is saved to `~/.config/agents-sync/config.json`.
 
-### Scan skills
+### Scan skills and MCP servers
 
 ```bash
-skills scan
+agents scan
 ```
 
-Scans the master platform's skill folder and displays all found skills. This saves the skills information to `skills_info.json`, which is used by the sync command.
+Scans the master platform and displays:
+- All found skills (saved to `skills_info.json`)
+- All MCP servers (from global config and plugin `.mcp.json` files)
 
-**Important**: If you add new skills to the master platform, you must run `skills scan` first before syncing, so the new skills are discovered and included in the sync operation.
+**Important**: If you add new skills to the master platform, you must run `agents scan` first before syncing, so the new skills are discovered and included in the sync operation.
 
 You can also scan a specific platform:
 
 ```bash
-skills scan --platform cursor
+agents scan --platform cursor
 ```
 
-### Clean skills
+### Clean skills and MCP servers
 
-Delete all skills from master:
+Delete all skills and MCP servers from master:
 
 ```bash
-skills clean master
+agents clean master
 ```
 
-Delete all skills from all fork platforms:
+Delete all skills and MCP servers from all fork platforms:
 
 ```bash
-skills clean fork
+agents clean fork
 ```
 
-**Important**: 
+**Important**:
 - This only affects **global skills** in platform directories (e.g., `~/.claude/skills`, `~/.cursor/skills`)
 - **Repo-specific skills** (in git repositories) are never touched by this tool
 - For Claude Code, this also cleans skills from plugin directories (`~/.claude/plugins/.../skills`)
+- MCP servers are removed from config files (the mcpServers/mcp section is deleted)
 - The command will show you exactly what will be deleted before proceeding
 
 Use `--dry-run` to preview what would be deleted without actually deleting:
 
 ```bash
-skills clean master --dry-run
+agents clean master --dry-run
 ```
 
-### Sync skills
+### Sync skills and MCP servers
 
-Copy all skills from master to all configured fork platforms:
+Copy all skills and MCP servers from master to all configured fork platforms:
 
 ```bash
-skills sync
+agents sync
 ```
 
-This will copy all skills from master to each fork platform (hard copy, no symlinks). Existing skills in fork platforms will be overwritten.
+This will:
+- Copy all skills from master to each fork platform (hard copy, no symlinks)
+- Sync MCP servers to fork platforms with automatic format translation
+- Existing skills in fork platforms will be overwritten
 
-**Important**: Sync only syncs what has been scanned. If you add new skills to the master platform, you must run `skills scan` first to discover the new skills, then run `skills sync` to sync them.
+**Important**: Sync only syncs what has been scanned. If you add new skills to the master platform, you must run `agents scan` first to discover the new skills, then run `agents sync` to sync them.
 
 **Explicit workflow** (recommended for transparency):
-1. Scan to discover skills: `skills scan` (required if master has new skills)
-2. Clean forks explicitly: `skills clean fork`
-3. Then sync: `skills sync`
+1. Scan to discover skills and MCP servers: `agents scan` (required if master has new skills)
+2. Clean forks explicitly: `agents clean fork`
+3. Then sync: `agents sync`
 
 Or use `--dry-run` to preview what sync would do:
 
 ```bash
-skills sync --dry-run
+agents sync --dry-run
 ```
 
 ### Backup skills
@@ -179,23 +196,23 @@ skills sync --dry-run
 Backup all skills from master platform:
 
 ```bash
-skills backup
+agents backup
 ```
 
-Backups are saved to `~/.config/skills-sync/backups/` with timestamps. Each backup includes:
+Backups are saved to `~/.config/agents-sync/backups/` with timestamps. Each backup includes:
 - All skill files and directories
 - `skills_info.json` with platform, timestamp, and path information for restoration
 
 You can also backup a specific platform:
 
 ```bash
-skills backup --platform cursor
+agents backup --platform cursor
 ```
 
 Use `--dry-run` to preview what would be backed up:
 
 ```bash
-skills backup --dry-run
+agents backup --dry-run
 ```
 
 ### Restore skills
@@ -203,7 +220,7 @@ skills backup --dry-run
 Restore skills from a previous backup:
 
 ```bash
-skills restore
+agents restore
 ```
 
 This will:
@@ -215,7 +232,7 @@ This will:
 Use `--dry-run` to preview what would be restored:
 
 ```bash
-skills restore --dry-run
+agents restore --dry-run
 ```
 
 **Note**: Restore uses the `skills_info.json` file saved with each backup to restore skills to the correct locations, including Claude Code plugin directories.
@@ -225,16 +242,18 @@ skills restore --dry-run
 View all available platforms and their paths:
 
 ```bash
-skills platforms
+agents platforms
 ```
 
 ## Notes
 
 - **Global skills only**: This tool only manages skills in platform directories (e.g., `~/.claude/skills`). Repo-specific skills synced to git should be manually managed
+- **MCP server sync**: MCP servers are read from Claude Code and translated to target platform formats automatically
 - **Explicit commands**: Each command does one thing. Run them one by one (`scan`, `clean`, `sync`, `backup`, `restore`) to understand exactly what each step does
-- **Scan before sync**: Sync only syncs what has been scanned. If you add new skills to master, run `skills scan` first, then `skills sync`
+- **Scan before sync**: Sync only syncs what has been scanned. If you add new skills to master, run `agents scan` first, then `agents sync`
 - All file operations use **hard copies** (no symlinks)
-- Backups are timestamped and stored in `~/.config/skills-sync/backups/`
+- Backups are timestamped and stored in `~/.config/agents-sync/backups/`
 - Each backup includes `skills_info.json` with path information for accurate restoration
 - Clean operations handle Claude Code plugin directories recursively
 - Restore automatically matches paths, with fallback logic for plugin directories
+- **Backwards compatibility**: The `skills` and `skills-sync` commands still work as aliases for `agents` and `agents-sync`
