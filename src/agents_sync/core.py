@@ -8,6 +8,7 @@ from datetime import datetime
 
 from .platforms import Platform, get_platform_paths, get_all_platforms
 from .config import BACKUP_DIR, ensure_config_dir, load_skills_info, save_skills_info, SKILLS_INFO_FILE
+from .mcp import write_mcp_servers
 
 
 def scan_skills(platform: Platform) -> List[Path]:
@@ -163,7 +164,17 @@ def sync_skills(master_platform: Platform, fork_platforms: List[Platform], maste
                     synced_count += 1
         
         results["synced_to"][fork_platform.value] = synced_count
-    
+
+    # Sync MCP servers
+    master_mcp = all_skills_info.get("mcpServers", {})
+    if master_mcp:
+        for fork_platform in fork_platforms:
+            if not dry_run:
+                write_mcp_servers(fork_platform, master_mcp)
+            results["synced_to"][fork_platform.value + "_mcp"] = len(master_mcp)
+
+    results["mcp_synced"] = len(master_mcp) if master_mcp else 0
+
     return results
 
 
