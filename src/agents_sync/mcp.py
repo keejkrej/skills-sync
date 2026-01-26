@@ -105,14 +105,23 @@ def _read_codex_mcp() -> Tuple[Dict[str, Any], List[str]]:
                 for name, config in data.get("mcp_servers", {}).items():
                     # Convert Codex format to Claude format
                     claude_config = {}
-                    if "command" in config:
-                        claude_config["command"] = config["command"]
-                    if "args" in config:
-                        claude_config["args"] = config["args"]
-                    if "env" in config:
-                        claude_config["env"] = config["env"]
-                    servers[name] = claude_config
-                    sources.append(f"{name} (from config.toml)")
+                    if "url" in config:
+                        # Remote/streamable HTTP server
+                        claude_config["type"] = "http"
+                        claude_config["url"] = config["url"]
+                        if "http_headers" in config:
+                            claude_config["headers"] = config["http_headers"]
+                    else:
+                        # Stdio server
+                        if "command" in config:
+                            claude_config["command"] = config["command"]
+                        if "args" in config:
+                            claude_config["args"] = config["args"]
+                        if "env" in config:
+                            claude_config["env"] = config["env"]
+                    if claude_config:
+                        servers[name] = claude_config
+                        sources.append(f"{name} (from config.toml)")
         except (tomllib.TOMLDecodeError, IOError):
             pass
 
@@ -224,14 +233,25 @@ def _write_codex_mcp(path: Path, servers: Dict[str, Any]):
     # Convert Claude format to Codex format
     codex_servers = {}
     for name, config in servers.items():
+        server_type = config.get("type", "stdio")
         codex_config = {}
-        if "command" in config:
-            codex_config["command"] = config["command"]
-        if "args" in config:
-            codex_config["args"] = config["args"]
-        if "env" in config:
-            codex_config["env"] = config["env"]
-        codex_servers[name] = codex_config
+        if server_type in ("sse", "http"):
+            # Remote server: map url and headers
+            if "url" in config:
+                codex_config["url"] = config["url"]
+            if "headers" in config:
+                codex_config["http_headers"] = config["headers"]
+        else:
+            # Stdio server: map command, args, env
+            if "command" in config:
+                codex_config["command"] = config["command"]
+            if "args" in config:
+                codex_config["args"] = config["args"]
+            if "env" in config:
+                codex_config["env"] = config["env"]
+        # Skip servers with no usable config (avoids empty TOML sections)
+        if codex_config:
+            codex_servers[name] = codex_config
 
     data["mcp_servers"] = codex_servers
     with open(path, 'wb') as f:
