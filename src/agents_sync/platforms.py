@@ -84,7 +84,7 @@ def get_mcp_paths(platform: Platform) -> dict:
     mcp_paths = {
         Platform.CLAUDE_CODE: {
             "global": home / ".claude.json",
-            "plugins": home / ".claude" / "plugins" / "cache",
+            "plugins": home / ".claude" / "plugins" / "marketplaces",
         },
         Platform.CODEX: {
             "global": home / ".codex" / "config.toml",
