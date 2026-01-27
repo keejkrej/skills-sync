@@ -274,20 +274,20 @@ def sync(
         console.print(f"[bold red]Error: {results['error']}[/bold red]")
         raise typer.Exit(1)
     
-    console.print(f"\n[bold green]Master Skills:[/bold green] {results['master_skills']}")
-    console.print("\n[bold cyan]Synced to:[/bold cyan]")
-    
-    for fork_key, count in results['synced_to'].items():
-        fork_name = get_platform_display_name(platforms[fork_key])
-        if dry_run:
-            console.print(f"  {fork_name}: [yellow]Would sync {count} skill(s)[/yellow]")
-        else:
-            console.print(f"  {fork_name}: [green]{count} skill(s) synced[/green]")
-
-    # Display MCP sync results
+    # Display sync summary
+    skill_count = results['master_skills']
     mcp_count = results.get('mcp_synced', 0)
-    if mcp_count > 0:
-        console.print(f"\n[bold cyan]MCP Servers Synced:[/bold cyan] {mcp_count}")
+    fork_names = ", ".join(get_platform_display_name(platforms[k]) for k in results['synced_to'])
+
+    console.print(f"\n[bold cyan]Synced to:[/bold cyan] {fork_names}")
+    if dry_run:
+        console.print(f"  Skills: [yellow]Would sync {skill_count}[/yellow]")
+        if mcp_count > 0:
+            console.print(f"  MCP Servers: [yellow]Would sync {mcp_count}[/yellow]")
+    else:
+        console.print(f"  Skills: [green]{skill_count} synced[/green]")
+        if mcp_count > 0:
+            console.print(f"  MCP Servers: [green]{mcp_count} synced[/green]")
 
 
 @app.command()
